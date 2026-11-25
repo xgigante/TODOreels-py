@@ -47,3 +47,20 @@ def test_check_figures_rejects_invalid_brief():
     bad = {**PAYLOAD, "brief": {**PAYLOAD["brief"], "certainty": 0.9}}
     response = client.post("/check-figures", json=bad)
     assert response.status_code == 422
+
+
+def test_ask_returns_the_llm_answer(monkeypatch):
+    async def fake_ask_llm(prompt: str) -> str:
+        return f"respuesta falsa a: {prompt}"
+
+    monkeypatch.setattr("todoreels_py.api.ask_llm", fake_ask_llm)
+
+    response = client.post("/ask", json={"prompt": "hola"})
+
+    assert response.status_code == 200
+    assert response.json() == {"answer": "respuesta falsa a: hola"}
+
+
+def test_ask_rejects_empty_prompt():
+    response = client.post("/ask", json={"prompt": ""})
+    assert response.status_code == 422
